@@ -6,6 +6,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Upload, Loader2 } from "lucide-react";
 import qrCode from "@/assets/phonepe-qr.jpeg";
+import { db, storage } from "@/lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const PaymentSection = () => {
   const [formData, setFormData] = useState({
@@ -39,32 +42,32 @@ const PaymentSection = () => {
     setIsSubmitting(true);
 
     try {
-      // Convert file to base64 for local storage
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const submissionData = {
-          name: formData.name,
-          rollNo: formData.rollNo,
-          email: formData.email,
-          paymentProofName: formData.paymentProof!.name,
-          paymentStatus: "Pending",
-          timestamp: new Date().toISOString(),
-        };
-
-        // Store in localStorage
-        const submissions = JSON.parse(localStorage.getItem("freshersSubmissions") || "[]");
-        submissions.push(submissionData);
-        localStorage.setItem("freshersSubmissions", JSON.stringify(submissions));
-
-        toast({
-          title: "Success!",
-          description: "Your payment details have been submitted successfully.",
-        });
-
-        navigate("/success");
-      };
+      // Upload image to Firebase Storage
+      const timestamp = Date.now();
+      const fileName = `${formData.rollNo}_${timestamp}_${formData.paymentProof.name}`;
+      const storageRef = ref(storage, `payment-proofs/${fileName}`);
       
-      reader.readAsDataURL(formData.paymentProof);
+      await uploadBytes(storageRef, formData.paymentProof);
+      const imageUrl = await getDownloadURL(storageRef);
+
+      // Save to Firestore
+      const submissionData = {
+        name: formData.name,
+        rollNo: formData.rollNo,
+        email: formData.email,
+        paymentProofUrl: imageUrl,
+        paymentStatus: "Pending",
+        timestamp: new Date().toISOString(),
+      };
+
+      await addDoc(collection(db, "freshersSubmissions"), submissionData);
+
+      toast({
+        title: "Success!",
+        description: "Your payment details have been submitted successfully.",
+      });
+
+      navigate("/success");
     } catch (error) {
       console.error("Submission error:", error);
       toast({
