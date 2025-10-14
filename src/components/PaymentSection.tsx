@@ -6,8 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Upload, Loader2 } from "lucide-react";
 import qrCode from "@/assets/phonepe-qr.jpeg";
-import { storage } from "@/lib/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const PaymentSection = () => {
   const [formData, setFormData] = useState({
@@ -16,12 +14,9 @@ const PaymentSection = () => {
     email: "",
     paymentProof: null as File | null,
   });
-  const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Replace this with your actual Google Sheets Web App URL
-  const GOOGLE_SHEETS_URL = "YOUR_GOOGLE_SHEETS_WEB_APP_URL_HERE";
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -41,59 +36,44 @@ const PaymentSection = () => {
       return;
     }
 
-    setIsUploading(true);
+    setIsSubmitting(true);
 
     try {
-      // Upload image to Firebase Storage
-      const timestamp = Date.now();
-      const fileName = `${formData.rollNo}_${timestamp}_${formData.paymentProof.name}`;
-      const storageRef = ref(storage, `uploads/${fileName}`);
+      // Convert file to base64 for local storage
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const submissionData = {
+          name: formData.name,
+          rollNo: formData.rollNo,
+          email: formData.email,
+          paymentProofName: formData.paymentProof!.name,
+          paymentStatus: "Pending",
+          timestamp: new Date().toISOString(),
+        };
 
-      await uploadBytes(storageRef, formData.paymentProof);
-      const imageUrl = await getDownloadURL(storageRef);
+        // Store in localStorage
+        const submissions = JSON.parse(localStorage.getItem("freshersSubmissions") || "[]");
+        submissions.push(submissionData);
+        localStorage.setItem("freshersSubmissions", JSON.stringify(submissions));
 
-      // Prepare data for Google Sheets
-      const submissionData = {
-        name: formData.name,
-        rollNo: formData.rollNo,
-        email: formData.email,
-        imageUrl: imageUrl,
-        paymentStatus: "Pending",
-        timestamp: new Date().toISOString(),
-      };
-
-      // Send to Google Sheets Web App
-      if (GOOGLE_SHEETS_URL !== "YOUR_GOOGLE_SHEETS_WEB_APP_URL_HERE") {
-        await fetch(GOOGLE_SHEETS_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(submissionData),
+        toast({
+          title: "Success!",
+          description: "Your payment details have been submitted successfully.",
         });
-      }
 
-      // Store in localStorage as backup
-      const submissions = JSON.parse(localStorage.getItem("freshersSubmissions") || "[]");
-      submissions.push(submissionData);
-      localStorage.setItem("freshersSubmissions", JSON.stringify(submissions));
-
-      toast({
-        title: "Success!",
-        description: "Your payment details have been submitted successfully.",
-      });
-
-      navigate("/success");
+        navigate("/success");
+      };
+      
+      reader.readAsDataURL(formData.paymentProof);
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error("Submission error:", error);
       toast({
-        title: "Upload Failed",
-        description: "Failed to upload payment proof. Please try again.",
+        title: "Submission Failed",
+        description: "Failed to submit payment details. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsUploading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -169,11 +149,11 @@ const PaymentSection = () => {
               )}
             </div>
 
-            <Button type="submit" size="lg" className="w-full" disabled={isUploading}>
-              {isUploading ? (
+            <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
+                  Submitting...
                 </>
               ) : (
                 "Submit Payment Details"
