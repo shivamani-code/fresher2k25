@@ -6,9 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Upload, Loader2 } from "lucide-react";
 import qrCode from "@/assets/phonepe-qr.jpeg";
-import { db, storage } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { supabase } from "@/integrations/supabase/client";
 
 const PaymentSection = () => {
   const [formData, setFormData] = useState({
@@ -42,25 +40,33 @@ const PaymentSection = () => {
     setIsSubmitting(true);
 
     try {
-      // Upload image to Firebase Storage
+      // Upload image to storage
       const timestamp = Date.now();
       const fileName = `${formData.rollNo}_${timestamp}_${formData.paymentProof.name}`;
-      const storageRef = ref(storage, `payment-proofs/${fileName}`);
       
-      await uploadBytes(storageRef, formData.paymentProof);
-      const imageUrl = await getDownloadURL(storageRef);
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('payment-proofs')
+        .upload(fileName, formData.paymentProof);
 
-      // Save to Firestore
-      const submissionData = {
-        name: formData.name,
-        rollNo: formData.rollNo,
-        email: formData.email,
-        paymentProofUrl: imageUrl,
-        paymentStatus: "Pending",
-        timestamp: new Date().toISOString(),
-      };
+      if (uploadError) throw uploadError;
 
-      await addDoc(collection(db, "freshersSubmissions"), submissionData);
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('payment-proofs')
+        .getPublicUrl(fileName);
+
+      // Save to database
+      const { error: insertError } = await supabase
+        .from('freshers_submissions')
+        .insert({
+          name: formData.name,
+          roll_no: formData.rollNo,
+          email: formData.email,
+          payment_proof_url: publicUrl,
+          payment_status: "Pending",
+        });
+
+      if (insertError) throw insertError;
 
       toast({
         title: "Success!",
