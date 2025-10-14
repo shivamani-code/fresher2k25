@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Upload, Loader2 } from "lucide-react";
-import qrCode from "@/assets/phonepe-qr.jpeg";
+import qrCode from "@/assets/phonepe-qr-new.jpeg";
 import { supabase } from "@/integrations/supabase/client";
 
 const PaymentSection = () => {
