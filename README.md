@@ -1,73 +1,69 @@
-# Welcome to your Lovable project
+# 🎉 Freshers 2025 – Event Fee Portal
 
-## Project info
+A web app for collecting **Freshers 2025** event fees: students pay via a PhonePe QR code, upload their payment screenshot, and their submission is saved to Supabase for the organisers to verify.
 
-**URL**: https://lovable.dev/projects/e8bb1fd6-6ef5-4bfc-bdb8-3e4baae7d5b6
+*Represented by Jayanth Kumar & Shiva Mani.*
 
-## How can I edit this code?
+## ✨ Features
 
-There are several ways of editing your application.
+- **Hero page** – "Freshers 2025 – New Beginnings, Endless Memories." with a *Pay Fee* button that scrolls to the payment section
+- **Payment section** – PhonePe QR code to scan and pay
+- **Submission form** – full name, roll number, email and payment-proof image upload (all required)
+- **Supabase backend**
+  - Payment proof uploaded to the `payment-proofs` storage bucket
+  - Submission saved to the `freshers_submissions` table with status `Pending`
+- **Success page** – confirmation with event details (venue MREM, 18 October 2025, 9:30 AM onwards)
+- Toast notifications for missing fields and errors, loading state while submitting
+- 404 page
 
-**Use Lovable**
+## 🛠️ Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e8bb1fd6-6ef5-4bfc-bdb8-3e4baae7d5b6) and start prompting.
+- React 18 + TypeScript + Vite
+- Tailwind CSS + shadcn/ui (Radix UI), Lucide icons
+- React Router, TanStack Query
+- Supabase (Postgres + Storage)
 
-Changes made via Lovable will be committed automatically to this repo.
+## 📁 Project Structure
 
-**Use your preferred IDE**
+```
+fresher2k25/
+├── src/
+│   ├── pages/              # Index (hero + payment), Success, NotFound
+│   ├── components/
+│   │   ├── PaymentSection.tsx   # QR code + submission form + Supabase upload
+│   │   └── ui/                  # shadcn/ui components
+│   ├── integrations/supabase/   # Supabase client + generated types
+│   └── assets/             # PhonePe QR images
+├── supabase/migrations/    # Table, RLS policies and storage bucket
+└── public/
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🚀 Run Locally
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+**Prerequisites:** Node.js 18+ and npm, plus a Supabase project.
 
-Follow these steps:
+```bash
+git clone https://github.com/shivamani-code/fresher2k25.git
+cd fresher2k25
+npm install
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Create a `.env` file:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+VITE_SUPABASE_PROJECT_ID=your_project_id
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+Run the SQL in `supabase/migrations/` on your Supabase project (creates the `freshers_submissions` table, its policies and the `payment-proofs` bucket), then:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Other scripts: `npm run build`, `npm run preview`, `npm run lint`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🖼️ Payment QR
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/e8bb1fd6-6ef5-4bfc-bdb8-3e4baae7d5b6) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Replace `src/assets/phonepe-qr-new.jpeg` with your own payment QR code before using it for another event.
